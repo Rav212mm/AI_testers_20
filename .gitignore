@@ -1,0 +1,26 @@
+# === Node ===
+node_modules/
+
+# === Playwright ===
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+.last-run.json
+
+# === Env / secrets ===
+.env
+.env.*
+!.env.example
+
+# === IDE / OS ===
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# === External repos (cloned separately, see module READMEs) ===
+02_Rolnopol/rolnopol/
+01_Poczatek_playright/Type_script/02_typescript_dla _testera/typescript-dla-testera/
