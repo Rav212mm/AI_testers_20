@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://demo-bank.vercel.app/';
-
 test.describe('User login to Demobank', () => {
+  const BASE_URL = 'https://demo-bank.vercel.app/';
+
   test('should log in with correct credentials and show the user name', async ({
     page,
   }) => {

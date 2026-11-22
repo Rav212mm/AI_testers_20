@@ -70,4 +70,5 @@ test.describe('Pulpit (dashboard) tests', () => {
       expectedConfirmation,
     );
   });
+  
 });
