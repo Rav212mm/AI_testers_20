@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { loginData } from '../test-data/login.data';
 
 const BASE_URL = 'https://demo-bank.vercel.app/';
-const USER_ID = 'testerLO';
-const USER_PASSWORD = 'password';
 
 test.describe('Pulpit (dashboard) tests', () => {
   test.describe.configure({ retries: 3, timeout: 60_000 });
@@ -14,8 +13,8 @@ test.describe('Pulpit (dashboard) tests', () => {
       timeout: 30_000,
     });
 
-    await page.getByTestId('login-input').fill(USER_ID);
-    await page.getByTestId('password-input').fill(USER_PASSWORD);
+    await page.getByTestId('login-input').fill(loginData.userId);
+    await page.getByTestId('password-input').fill(loginData.userPassword);
     await page.getByTestId('login-button').click();
 
     // Leave the hook only when the dashboard is really rendered.
