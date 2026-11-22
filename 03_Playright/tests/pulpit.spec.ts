@@ -1,14 +1,17 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://demo-bank.vercel.app/';
 
 test.describe('Pulpit (dashboard) tests', () => {
   test.describe.configure({ retries: 3 });
-
+  
   test.beforeEach(async ({ page }) => {
+    const BASE_URL = 'https://demo-bank.vercel.app/';
+    const userId = 'testerLO';
+    const userPassword = 'password';
+
     await page.goto(BASE_URL);
-    await page.getByTestId('login-input').fill('testerLO');
-    await page.getByTestId('password-input').fill('password');
+    await page.getByTestId('login-input').fill(userId);
+    await page.getByTestId('password-input').fill(userPassword);
     await page.getByTestId('login-button').click();
   });
 

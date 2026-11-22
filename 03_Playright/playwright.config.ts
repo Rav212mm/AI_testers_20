@@ -36,7 +36,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
+    baseURL: 'https://demo-bank.vercel.app',
 
     /* Collect trace for every test, also the passing ones, so it can be opened
      * in the Trace Viewer: npx playwright show-trace <path> or the HTML report.
