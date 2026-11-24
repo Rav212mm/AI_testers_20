@@ -1,62 +1,51 @@
 import { test, expect } from '../fixtures/demobank.fixture';
+import { phoneTopUpData, quickTransferData } from '../test-data/pulpit.data';
 
+/*
+ * Each operation is checked in one test for both of its visible results: the
+ * confirmation message and the new balance. Separate tests would only repeat
+ * the same login + operation, and every extra session to the demo app makes
+ * the Vercel rate limit (HTTP 429) more likely.
+ */
 test.describe('Pulpit (dashboard) tests', () => {
   // Demobank can start slowly (cold start), so give the tests more time.
   test.describe.configure({ timeout: 60_000 });
 
-  test('should execute a quick payment with correct data', async ({
+  test('should execute a quick transfer and decrease the balance', async ({
     dashboardPage,
   }) => {
     // Arrange
-    const receiverOption = '2';
-    const expectedReceiverName = 'Chuck Demobankowy';
-    const transferAmount = '150';
-    const expectedTransferAmount = '150,00PLN';
-    const transferTitle = 'pizza';
-    const expectedConfirmation = `Przelew wykonany! ${expectedReceiverName} - ${expectedTransferAmount} - ${transferTitle}`;
-
-    // Act
-    await dashboardPage.makeQuickTransfer({
-      receiver: receiverOption,
-      amount: transferAmount,
-      title: transferTitle,
-    });
-
-    // Assert
-    await expect(dashboardPage.messages).toHaveText(expectedConfirmation);
-  });
-
-  test('should top up a phone number with correct data', async ({
-    dashboardPage,
-  }) => {
-    // Arrange
-    const phoneNumber = '500 xxx xxx';
-    const topUpAmount = '50';
-    const expectedTopUpAmount = '50,00PLN';
-    const expectedConfirmation = `Doładowanie wykonane! ${expectedTopUpAmount} na numer ${phoneNumber}`;
-
-    // Act
-    await dashboardPage.topUpPhone({ phoneNumber, amount: topUpAmount });
-
-    // Assert
-    await expect(dashboardPage.messages).toHaveText(expectedConfirmation);
-  });
-
-  test('should decrease the account balance after a phone top up', async ({
-    dashboardPage,
-  }) => {
-    // Arrange
-    const phoneNumber = '500 xxx xxx';
-    const topUpAmount = '50';
+    const { receiver, receiverName, amount, title } = quickTransferData;
+    const expectedConfirmation = `Przelew wykonany! ${receiverName} - ${amount},00PLN - ${title}`;
     const initialBalance = await dashboardPage.getBalance();
-    const expectedBalance = String(initialBalance - Number(topUpAmount));
+    const expectedBalance = initialBalance - Number(amount);
 
     // Act
-    await dashboardPage.topUpPhone({ phoneNumber, amount: topUpAmount });
+    await dashboardPage.makeQuickTransfer({ receiver, amount, title });
 
     // Assert
+    await expect.soft(dashboardPage.messages).toHaveText(expectedConfirmation);
     await expect
       .poll(() => dashboardPage.getBalance())
-      .toBe(Number(expectedBalance));
+      .toBeCloseTo(expectedBalance, 2);
+  });
+
+  test('should top up a phone and decrease the balance', async ({
+    dashboardPage,
+  }) => {
+    // Arrange
+    const { phoneNumber, amount } = phoneTopUpData;
+    const expectedConfirmation = `Doładowanie wykonane! ${amount},00PLN na numer ${phoneNumber}`;
+    const initialBalance = await dashboardPage.getBalance();
+    const expectedBalance = initialBalance - Number(amount);
+
+    // Act
+    await dashboardPage.topUpPhone({ phoneNumber, amount });
+
+    // Assert
+    await expect.soft(dashboardPage.messages).toHaveText(expectedConfirmation);
+    await expect
+      .poll(() => dashboardPage.getBalance())
+      .toBeCloseTo(expectedBalance, 2);
   });
 });

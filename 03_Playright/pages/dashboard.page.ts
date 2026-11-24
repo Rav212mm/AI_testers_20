@@ -76,9 +76,13 @@ export class DashboardPage extends LoggedInPage {
     await this.closeConfirmationDialog();
   }
 
-  /** Current account balance as a number. */
+  /**
+   * Current account balance as a number. Tolerates thousand separators
+   * ("13 159,20") so a formatting change does not turn it into NaN.
+   */
   async getBalance(): Promise<number> {
-    return Number(await this.balance.innerText());
+    const text = await this.balance.innerText();
+    return Number(text.replace(/\s/g, '').replace(',', '.'));
   }
 
   /** Navigate to the payments screen and return it once it is rendered. */
