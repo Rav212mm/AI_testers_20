@@ -14,8 +14,20 @@ type DemobankFixtures = {
  * Playwright `test` extended with ready-to-use page objects, so the specs
  * do not repeat the open + log in sequence in their hooks.
  */
+/**
+ * Pause before a retry. Vercel answers with HTTP 429 (too many requests) when
+ * the demo app is hit too often, so an immediate retry is usually blocked too.
+ */
+const RETRY_BACKOFF_MS = 15_000;
+
 export const test = base.extend<DemobankFixtures>({
-  loginPage: async ({ page }, use) => {
+  loginPage: async ({ page }, use, testInfo) => {
+    if (testInfo.retry > 0) {
+      const backoff = RETRY_BACKOFF_MS * testInfo.retry;
+      testInfo.setTimeout(testInfo.timeout + backoff);
+      await page.waitForTimeout(backoff);
+    }
+
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await use(loginPage);

@@ -55,6 +55,8 @@ test.describe('Pulpit (dashboard) tests', () => {
     await dashboardPage.topUpPhone({ phoneNumber, amount: topUpAmount });
 
     // Assert
-    await expect(dashboardPage.balance).toHaveText(expectedBalance);
+    await expect
+      .poll(() => dashboardPage.getBalance())
+      .toBe(Number(expectedBalance));
   });
 });
