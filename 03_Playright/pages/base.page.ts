@@ -9,34 +9,20 @@ import { type Locator, type Page } from '@playwright/test';
  * - Vercel bot protection, which sometimes serves a challenge page instead of
  *   the app, so a screen that does not show up is reloaded a few times.
  */
-export class BasePage {
+export abstract class BasePage {
   readonly page: Page;
 
-  // app header (visible on every screen after a successful login)
-  readonly userName: Locator;
-  // confirmation area reused by payments and dashboard widgets
-  readonly messages: Locator;
-  readonly confirmationDialog: Locator;
   // Vercel bot check shown instead of the app when the traffic is too high
   readonly vercelCheckpoint: Locator;
 
   /** Element proving the screen is rendered - set by every page object. */
-  protected readyLocator: Locator | undefined;
+  protected abstract readonly readyLocator: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.userName = page.getByTestId('user-name');
-    this.messages = page.locator('#show_messages');
-    this.confirmationDialog = page.locator('.ui-dialog:visible');
     this.vercelCheckpoint = page
       .getByText('Vercel Security Checkpoint')
       .first();
-  }
-
-  /** Open the app root and wait until the screen is rendered. */
-  async goto(path = '/'): Promise<void> {
-    await this.page.goto(path, { waitUntil: 'domcontentloaded' });
-    await this.waitUntilReady();
   }
 
   /**
@@ -45,9 +31,6 @@ export class BasePage {
    * shows up, so a blocked cold start does not fail the whole test.
    */
   async waitUntilReady(timeout = 30_000): Promise<void> {
-    if (!this.readyLocator) {
-      return;
-    }
     const deadline = Date.now() + timeout;
     let blockedByVercel = false;
 
@@ -73,11 +56,28 @@ export class BasePage {
         `(waiting for ${this.readyLocator}).`,
     );
   }
+}
+
+/**
+ * Screens available only after a successful login. They share the header
+ * with the user name and the confirmation messages / dialog.
+ */
+export abstract class LoggedInPage extends BasePage {
+  // app header
+  readonly userName: Locator;
+  // confirmation area reused by payments and dashboard widgets
+  readonly messages: Locator;
+  readonly confirmationDialog: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.userName = page.getByTestId('user-name');
+    this.messages = page.locator('#show_messages');
+    this.confirmationDialog = page.locator('.ui-dialog:visible');
+  }
 
   /** Dismiss the "Przelew wykonany!" / "Doładowanie wykonane!" dialog. */
   async closeConfirmationDialog(): Promise<void> {
     await this.confirmationDialog.getByTestId('close-button').click();
   }
 }
-
-export default BasePage;

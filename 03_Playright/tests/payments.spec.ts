@@ -1,27 +1,14 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/login.pages';
-import { DashboardPage } from '../pages/dashboard.pages';
-import { PaymentsPage } from '../pages/payments.pages';
-import { loginData } from '../test-data/login.data';
+import { test, expect } from '../fixtures/demobank.fixture';
+import { type PaymentsPage } from '../pages/payments.page';
 
 test.describe('Payment tests', () => {
-  // Demobank can start slowly (cold start), so wait for elements instead of guessing.
-  test.describe.configure({ retries: 3, timeout: 60_000 });
+  // Demobank can start slowly (cold start), so give the tests more time.
+  test.describe.configure({ timeout: 60_000 });
 
   let paymentsPage: PaymentsPage;
 
-  test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(loginData.userId, loginData.userPassword);
-
-    // Fail with a clear error when the login itself did not work.
-    const dashboard = new DashboardPage(page);
-    await dashboard.waitUntilReady();
-    await dashboard.openPayments();
-
-    paymentsPage = new PaymentsPage(page);
-    await paymentsPage.waitUntilReady();
+  test.beforeEach(async ({ dashboardPage }) => {
+    paymentsPage = await dashboardPage.openPayments();
   });
 
   test('should execute a bank transfer with correct data', async () => {

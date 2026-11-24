@@ -1,25 +1,12 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/login.pages';
-import { DashboardPage } from '../pages/dashboard.pages';
-import { loginData } from '../test-data/login.data';
+import { test, expect } from '../fixtures/demobank.fixture';
 
 test.describe('Pulpit (dashboard) tests', () => {
-  test.describe.configure({ retries: 3, timeout: 60_000 });
+  // Demobank can start slowly (cold start), so give the tests more time.
+  test.describe.configure({ timeout: 60_000 });
 
-  let dashboard: DashboardPage;
-
-  test.beforeEach(async ({ page }) => {
-    // Demobank can start slowly (cold start), so wait for elements instead of guessing.
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(loginData.userId, loginData.userPassword);
-
-    // Leave the hook only when the dashboard is really rendered.
-    dashboard = new DashboardPage(page);
-    await dashboard.waitUntilReady();
-  });
-
-  test('should execute a quick payment with correct data', async () => {
+  test('should execute a quick payment with correct data', async ({
+    dashboardPage,
+  }) => {
     // Arrange
     const receiverOption = '2';
     const expectedReceiverName = 'Chuck Demobankowy';
@@ -29,17 +16,19 @@ test.describe('Pulpit (dashboard) tests', () => {
     const expectedConfirmation = `Przelew wykonany! ${expectedReceiverName} - ${expectedTransferAmount} - ${transferTitle}`;
 
     // Act
-    await dashboard.makeQuickTransfer({
+    await dashboardPage.makeQuickTransfer({
       receiver: receiverOption,
       amount: transferAmount,
       title: transferTitle,
     });
 
     // Assert
-    await expect(dashboard.messages).toHaveText(expectedConfirmation);
+    await expect(dashboardPage.messages).toHaveText(expectedConfirmation);
   });
 
-  test('should top up a phone number with correct data', async () => {
+  test('should top up a phone number with correct data', async ({
+    dashboardPage,
+  }) => {
     // Arrange
     const phoneNumber = '500 xxx xxx';
     const topUpAmount = '50';
@@ -47,23 +36,25 @@ test.describe('Pulpit (dashboard) tests', () => {
     const expectedConfirmation = `Doładowanie wykonane! ${expectedTopUpAmount} na numer ${phoneNumber}`;
 
     // Act
-    await dashboard.topUpPhone({ phoneNumber, amount: topUpAmount });
+    await dashboardPage.topUpPhone({ phoneNumber, amount: topUpAmount });
 
     // Assert
-    await expect(dashboard.messages).toHaveText(expectedConfirmation);
+    await expect(dashboardPage.messages).toHaveText(expectedConfirmation);
   });
 
-  test('should decrease the account balance after a phone top up', async () => {
+  test('should decrease the account balance after a phone top up', async ({
+    dashboardPage,
+  }) => {
     // Arrange
     const phoneNumber = '500 xxx xxx';
     const topUpAmount = '50';
-    const initialBalance = await dashboard.getBalance();
+    const initialBalance = await dashboardPage.getBalance();
     const expectedBalance = String(initialBalance - Number(topUpAmount));
 
     // Act
-    await dashboard.topUpPhone({ phoneNumber, amount: topUpAmount });
+    await dashboardPage.topUpPhone({ phoneNumber, amount: topUpAmount });
 
     // Assert
-    await expect(dashboard.balance).toHaveText(expectedBalance);
+    await expect(dashboardPage.balance).toHaveText(expectedBalance);
   });
 });

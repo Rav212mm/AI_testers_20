@@ -1,5 +1,5 @@
 import { type Locator, type Page } from '@playwright/test';
-import { BasePage } from './base.pages';
+import { LoggedInPage } from './base.page';
 
 export type BankTransfer = {
   receiver: string;
@@ -8,11 +8,13 @@ export type BankTransfer = {
 };
 
 /** Page Object Model for the Demobank payments screen (płatności). */
-export class PaymentsPage extends BasePage {
+export class PaymentsPage extends LoggedInPage {
   readonly transferReceiver: Locator;
   readonly transferAccount: Locator;
   readonly transferAmount: Locator;
   readonly transferButton: Locator;
+
+  protected readonly readyLocator: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,7 +28,11 @@ export class PaymentsPage extends BasePage {
   }
 
   /** Fill and execute the bank transfer, then close the dialog. */
-  async makeTransfer({ receiver, account, amount }: BankTransfer) {
+  async makeTransfer({
+    receiver,
+    account,
+    amount,
+  }: BankTransfer): Promise<void> {
     await this.transferReceiver.fill(receiver);
     await this.transferAccount.fill(account);
     await this.transferAmount.fill(amount);
@@ -34,5 +40,3 @@ export class PaymentsPage extends BasePage {
     await this.closeConfirmationDialog();
   }
 }
-
-export default PaymentsPage;

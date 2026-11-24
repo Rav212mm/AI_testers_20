@@ -1,5 +1,6 @@
 import { type Locator, type Page } from '@playwright/test';
-import { BasePage } from './base.pages';
+import { LoggedInPage } from './base.page';
+import { PaymentsPage } from './payments.page';
 
 export type QuickTransfer = {
   /** Value of the `<option>` in the receiver select, e.g. `'2'`. */
@@ -15,8 +16,8 @@ export type PhoneTopUp = {
 };
 
 /** Page Object Model for the Demobank dashboard (pulpit). */
-export class DashboardPage extends BasePage {
-  // header / account state
+export class DashboardPage extends LoggedInPage {
+  // account state / navigation
   readonly balance: Locator;
   readonly paymentsLink: Locator;
 
@@ -31,6 +32,8 @@ export class DashboardPage extends BasePage {
   readonly topUpAmount: Locator;
   readonly topUpAgreement: Locator;
   readonly topUpButton: Locator;
+
+  protected readonly readyLocator: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -52,7 +55,11 @@ export class DashboardPage extends BasePage {
   }
 
   /** Fill and execute the quick transfer widget, then close the dialog. */
-  async makeQuickTransfer({ receiver, amount, title }: QuickTransfer) {
+  async makeQuickTransfer({
+    receiver,
+    amount,
+    title,
+  }: QuickTransfer): Promise<void> {
     await this.transferReceiver.selectOption(receiver);
     await this.transferAmount.fill(amount);
     await this.transferTitle.fill(title);
@@ -61,7 +68,7 @@ export class DashboardPage extends BasePage {
   }
 
   /** Fill and execute the phone top up widget, then close the dialog. */
-  async topUpPhone({ phoneNumber, amount }: PhoneTopUp) {
+  async topUpPhone({ phoneNumber, amount }: PhoneTopUp): Promise<void> {
     await this.topUpReceiver.selectOption(phoneNumber);
     await this.topUpAmount.fill(amount);
     await this.topUpAgreement.click();
@@ -74,10 +81,12 @@ export class DashboardPage extends BasePage {
     return Number(await this.balance.innerText());
   }
 
-  /** Navigate to the payments screen. */
-  async openPayments(): Promise<void> {
+  /** Navigate to the payments screen and return it once it is rendered. */
+  async openPayments(): Promise<PaymentsPage> {
     await this.paymentsLink.click();
+
+    const paymentsPage = new PaymentsPage(this.page);
+    await paymentsPage.waitUntilReady();
+    return paymentsPage;
   }
 }
-
-export default DashboardPage;
