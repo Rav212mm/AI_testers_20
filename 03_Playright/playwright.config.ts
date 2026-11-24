@@ -27,10 +27,17 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * Retry everywhere, not only on CI. The demo app runs on Vercel, which
+   * answers with a bot check ("Failed to verify your browser") when too many
+   * browsers hit it at once, so a plain retry usually fixes it.
+   */
+  retries: 2,
+  /*
+   * One worker everywhere. The whole suite runs in ~25s serially, so
+   * parallelism buys nothing here but it does trigger the Vercel bot check.
+   */
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

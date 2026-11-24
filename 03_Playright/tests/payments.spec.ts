@@ -1,30 +1,30 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/login.pages';
+import { DashboardPage } from '../pages/dashboard.pages';
+import { PaymentsPage } from '../pages/payments.pages';
 import { loginData } from '../test-data/login.data';
 
 test.describe('Payment tests', () => {
   // Demobank can start slowly (cold start), so wait for elements instead of guessing.
   test.describe.configure({ retries: 3, timeout: 60_000 });
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByTestId('login-input')).toBeVisible({
-      timeout: 30_000,
-    });
+  let paymentsPage: PaymentsPage;
 
-    await page.getByTestId('login-input').fill(loginData.userId);
-    await page.getByTestId('password-input').fill(loginData.userPassword);
-    await page.getByTestId('login-button').click();
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.login(loginData.userId, loginData.userPassword);
 
     // Fail with a clear error when the login itself did not work.
-    const paymentsLink = page.getByRole('link', { name: 'płatności' });
-    await expect(paymentsLink).toBeVisible({ timeout: 30_000 });
-    await paymentsLink.click();
-    await expect(page.getByTestId('transfer_receiver')).toBeVisible({
-      timeout: 30_000,
-    });
+    const dashboard = new DashboardPage(page);
+    await dashboard.waitUntilReady();
+    await dashboard.openPayments();
+
+    paymentsPage = new PaymentsPage(page);
+    await paymentsPage.waitUntilReady();
   });
 
-  test('should execute a bank transfer with correct data', async ({ page }) => {
+  test('should execute a bank transfer with correct data', async () => {
     // Arrange
     const transferReceiver = 'Jan Nowak';
     const transferAccount = '12 3456 7890 1234 5678 9012 3456';
@@ -32,16 +32,13 @@ test.describe('Payment tests', () => {
     const expectedMessage = `Przelew wykonany! ${transferAmount},00PLN dla ${transferReceiver}`;
 
     // Act
-    await page.getByTestId('transfer_receiver').fill(transferReceiver);
-    await page.getByTestId('form_account_to').fill(transferAccount);
-    await page.getByTestId('form_amount').fill(transferAmount);
-    await page.getByRole('button', { name: 'wykonaj przelew' }).click();
-    await page
-      .locator('.ui-dialog:visible')
-      .getByTestId('close-button')
-      .click();
+    await paymentsPage.makeTransfer({
+      receiver: transferReceiver,
+      account: transferAccount,
+      amount: transferAmount,
+    });
 
     // Assert
-    await expect(page.locator('#show_messages')).toHaveText(expectedMessage);
+    await expect(paymentsPage.messages).toHaveText(expectedMessage);
   });
 });
