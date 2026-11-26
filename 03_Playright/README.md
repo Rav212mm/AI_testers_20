@@ -26,6 +26,107 @@ This is a Test Automation project based on `Playwright` and `TypeScript`. The te
 - run Trace Viewer on zip file  
   `npx playwright show-trace trace.zip`
 
+### Running tests by tag
+
+- smoke tests only  
+  `npm run test:smoke`
+- regression tests only  
+  `npm run test:regression`
+- single module  
+  `npm run test:auth` / `npm run test:dashboard` / `npm run test:payments`
+- all money-related tests (dashboard + payments)  
+  `npm run test:money`
+- negative scenarios only  
+  `npm run test:negative`
+- list tests with no browser  
+  `npm run test:list`
+- open the HTML report  
+  `npm run report`
+
+Every script is a plain `npx playwright test --grep ...` under the hood, so any
+tag can be combined by hand, see [Test tags](#test-tags).
+
+## Test tags
+
+Tags are declared with the native Playwright `tag` option, not written into the
+test title. In the HTML report they are shown as clickable chips next to the
+test name, so the report can be filtered without a single click in the terminal.
+
+```typescript
+// one tag for a whole group
+test.describe('User login to Demobank', { tag: '@auth' }, () => {
+  // several tags for a single test
+  test(
+    'should log in with correct credentials and show the user name',
+    { tag: ['@smoke', '@positive'] },
+    async ({ loginPage }) => {
+      //your code
+    },
+  );
+});
+```
+
+### Dimensions
+
+Every test gets exactly one tag from each of the first three dimensions. The
+auxiliary dimension is optional.
+
+| Dimension | Tags          | Meaning                                                   |
+| --------- | ------------- | --------------------------------------------------------- |
+| module    | `@auth`       | login / logout / session                                  |
+|           | `@dashboard`  | balance, quick transfers, phone top-ups                   |
+|           | `@payments`   | bank transfers and payment CRUD                           |
+| priority  | `@smoke`      | happy path, must pass on every run                        |
+|           | `@regression` | validation and edge cases, run before a release           |
+|           | `@wip`        | work in progress, excluded from CI                        |
+| scenario  | `@positive`   | valid data, expected to succeed                           |
+|           | `@negative`   | invalid data, expected to be rejected                     |
+| auxiliary | `@balance`    | test asserts the account balance                          |
+|           | `@slow`       | test needs a longer timeout (Demobank cold start)         |
+|           | `@infra-risk` | test is flaky because of the app, not the code (HTTP 429) |
+
+### Current matrix
+
+| Test                                          | Tags                                              |
+| --------------------------------------------- | ------------------------------------------------- |
+| login with correct credentials                | `@auth @smoke @positive`                          |
+| login with user id shorter than 8 characters  | `@auth @regression @negative`                     |
+| login with password shorter than 8 characters | `@auth @regression @negative`                     |
+| quick transfer with balance check             | `@dashboard @smoke @positive @balance @slow`      |
+| phone top-up with balance check               | `@dashboard @regression @positive @balance @slow` |
+| bank transfer with correct data               | `@payments @smoke @positive @slow`                |
+
+### Filtering
+
+```bash
+# one tag
+npx playwright test --grep @smoke
+
+# OR - smoke or regression
+npx playwright test --grep "@smoke|@regression"
+
+# AND - repeated flags are combined
+npx playwright test --grep @smoke --grep @auth
+
+# NOT - exclude
+npx playwright test --grep @smoke --grep-invert @slow
+```
+
+`--list` shows what a filter selects before anything is run:
+
+```bash
+npx playwright test --grep @smoke --list
+```
+
+### Rules to keep the report readable
+
+- one tag per dimension - never `@smoke` and `@regression` on the same test
+- lowercase, no spaces, one word after `@` (`@auth`, not `@Auth` or `@login_page`)
+- a new spec file gets its module tag on the `test.describe`, not on every test
+- `@wip` is temporary and must be removed once the test is stable
+- do not put tags into the test title - they would duplicate the chips and make
+  the titles longer
+
 ### Updating Playwright
 
 - check if Playwright should be updated  

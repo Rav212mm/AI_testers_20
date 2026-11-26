@@ -6,7 +6,17 @@
   "scripts": {
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed",
-    "test:pulpit:headed": "npm run test tests/pulpit.spec.ts -- --headed"
+    "test:pulpit:headed": "npm run test tests/pulpit.spec.ts -- --headed",
+    "test:smoke": "npx playwright test --grep @smoke",
+    "test:regression": "npx playwright test --grep @regression",
+    "test:pr": "npx playwright test --grep @smoke --grep-invert @wip",
+    "test:auth": "npx playwright test --grep @auth",
+    "test:dashboard": "npx playwright test --grep @dashboard",
+    "test:payments": "npx playwright test --grep @payments",
+    "test:money": "npx playwright test --grep \"@dashboard|@payments\"",
+    "test:negative": "npx playwright test --grep @negative",
+    "test:list": "npx playwright test --list",
+    "report": "npx playwright show-report"
   },
   "keywords": [],
   "author": "",
